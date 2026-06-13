@@ -1,3 +1,33 @@
+# =========================
+# Large datasets - keep locally
+# =========================
+
+# Ignore all real resume datasets
+data/raw_resumes/real/*
+!data/raw_resumes/real/.gitkeep
+
+# Ignore all synthetic resume datasets
+data/raw_resumes/synthetic/*
+!data/raw_resumes/synthetic/.gitkeep
+
+# Ignore structured resume CSV datasets
+data/structured_resumes/*
+!data/structured_resumes/.gitkeep
+
+# Ignore sample test resumes
+data/sample_test_resumes/*
+!data/sample_test_resumes/.gitkeep
+
+# Ignore compressed and heavy files
+*.zip
+*.rar
+*.7z
+*.pdf
+*.csv
+
+# But allow important small CSV/manifest sample if needed
+!data/manifest/dataset_manifest_sample.csv
+
 # Python
 __pycache__/
 *.pyc
@@ -6,29 +36,6 @@ venv/
 
 # Jupyter
 .ipynb_checkpoints/
-
-# Large compressed files
-*.zip
-*.rar
-*.7z
-
-# Large datasets - keep locally
-data/raw_resumes/
-data/structured_resumes/
-data/sample_test_resumes/
-
-# But keep folder structure
-!data/raw_resumes/
-!data/raw_resumes/real/
-!data/raw_resumes/synthetic/
-!data/raw_resumes/real/.gitkeep
-!data/raw_resumes/synthetic/.gitkeep
-
-!data/structured_resumes/
-!data/structured_resumes/.gitkeep
-
-!data/sample_test_resumes/
-!data/sample_test_resumes/.gitkeep
 
 # OS files
 .DS_Store
