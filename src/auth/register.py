@@ -1,17 +1,25 @@
-import os
+import sys
+from pathlib import Path
+
 import psycopg2
-from dotenv import load_dotenv
 
-try:
-    from src.auth.auth_service import (
-        hash_password
-    )
-except ModuleNotFoundError:
-    from auth_service import (
-        hash_password
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(
+        0,
+        str(ROOT_DIR)
     )
 
-load_dotenv()
+
+from src.api.database import (
+    get_connection
+)
+
+from src.auth.auth_service import (
+    hash_password
+)
 
 
 def register_user(
@@ -19,51 +27,84 @@ def register_user(
         email,
         password):
 
-    conn = psycopg2.connect(
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT")
-    )
+    conn = None
+    cursor = None
 
-    cursor = conn.cursor()
+    try:
+        conn = get_connection()
 
-    cursor.execute(
-        """
-        INSERT INTO users(
-            username,
-            email,
-            password_hash
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO users(
+                username,
+                email,
+                password_hash
+            )
+            VALUES
+            (%s,%s,%s)
+            RETURNING id;
+            """,
+            (
+                username,
+                email,
+                hash_password(
+                    password
+                )
+            )
         )
-        VALUES
-        (%s,%s,%s)
-        RETURNING id;
-        """,
-        (
-            username,
-            email,
-            hash_password(password)
+
+        user_id = cursor.fetchone()[0]
+
+        conn.commit()
+
+        print(
+            "User registered successfully"
         )
-    )
 
-    user_id = cursor.fetchone()[0]
+        print(
+            "User ID:",
+            user_id
+        )
 
-    conn.commit()
+        return user_id
 
-    cursor.close()
+    except psycopg2.errors.UniqueViolation:
+        if conn:
+            conn.rollback()
 
-    conn.close()
+        print(
+            "Username or email already exists"
+        )
 
-    print("User registered successfully")
-    print("User ID:", user_id)
+        return None
 
-    return user_id
+    except Exception as error:
+        if conn:
+            conn.rollback()
+
+        print(
+            "Registration failed"
+        )
+
+        print(
+            error
+        )
+
+        return None
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
 
 
 if __name__ == "__main__":
     register_user(
-        "testuser4",
-        "testuser4@example.com",
+        "testuser_docker_check",
+        "testuser_docker_check@example.com",
         "root123"
     )

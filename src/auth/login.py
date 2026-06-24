@@ -1,18 +1,23 @@
-import os
-import psycopg2
-from dotenv import load_dotenv
+import sys
+from pathlib import Path
 
-try:
-    from src.auth.auth_service import (
-        verify_password
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(
+        0,
+        str(ROOT_DIR)
     )
-except ModuleNotFoundError:
-    from auth_service import (
-        verify_password
-    )
 
 
-load_dotenv()
+from src.api.database import (
+    get_connection
+)
+
+from src.auth.auth_service import (
+    verify_password
+)
 
 
 def login_user(
@@ -23,13 +28,7 @@ def login_user(
     cursor = None
 
     try:
-        conn = psycopg2.connect(
-            database=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            host=os.getenv("DB_HOST"),
-            port=os.getenv("DB_PORT")
-        )
+        conn = get_connection()
 
         cursor = conn.cursor()
 
@@ -56,8 +55,14 @@ def login_user(
         return False
 
     except Exception as error:
-        print("Login failed")
-        print(error)
+        print(
+            "Login failed"
+        )
+
+        print(
+            error
+        )
+
         return False
 
     finally:

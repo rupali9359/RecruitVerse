@@ -51,6 +51,14 @@ def home():
     }
 
 
+@router.get("/health")
+def health():
+
+    return {
+        "status": "OK"
+    }
+
+
 @router.post("/login")
 def login(
         request: LoginRequest):
