@@ -41,3 +41,5 @@ venv/
 .DS_Store
 Thumbs.db.venv/
 .venv/
+.coverage
+data/parsed_resumes/raw_text_backup.txt

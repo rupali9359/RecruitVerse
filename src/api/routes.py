@@ -95,6 +95,12 @@ def register(
         "message": "User registration failed"
     }
 
+@router.get("/health")
+def health():
+
+    return {
+        "status": "OK"
+    }
 
 app.include_router(
     router
