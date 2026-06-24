@@ -11,3 +11,6 @@ sentence-transformers
 openpyxl
 scikit-learn
 numpy
+pytest
+httpx
+pytest-cov

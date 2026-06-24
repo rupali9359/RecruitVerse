@@ -1,75 +1,113 @@
+from pathlib import Path
+
 import fitz
-import os
 
-INPUT_FOLDER = "data/raw_resumes/real"
-OUTPUT_FOLDER = "data/parsed_resumes/raw_text"
-
-os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
-def extract_text_from_pdf(pdf_path):
-
-    text = ""
-
-    try:
-
-        pdf = fitz.open(pdf_path)
-
-        for page in pdf:
-            text += page.get_text()
-
-        pdf.close()
-
-    except Exception as e:
-
-        print(f"Error: {e}")
-
-    return text
+from src.utils.logger import (
+    logger
+)
 
 
-def process_pdfs(limit=50):
+OUTPUT_FOLDER = Path(
+    "data/parsed_resumes/raw_text"
+)
 
-    pdf_files = [
-        file
-        for file in os.listdir(INPUT_FOLDER)
-        if file.endswith(".pdf")
-    ]
 
-    print(f"Found {len(pdf_files)} PDFs")
+def ensure_output_folder():
 
-    for pdf_file in pdf_files[:limit]:
+    if OUTPUT_FOLDER.exists() and not OUTPUT_FOLDER.is_dir():
 
-        pdf_path = os.path.join(
-            INPUT_FOLDER,
-            pdf_file
+        backup_path = OUTPUT_FOLDER.with_name(
+            OUTPUT_FOLDER.name + "_backup.txt"
         )
 
-        text = extract_text_from_pdf(
+        OUTPUT_FOLDER.rename(
+            backup_path
+        )
+
+    OUTPUT_FOLDER.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+
+def extract_text(
+        pdf_path):
+
+    try:
+        pdf_path = Path(
             pdf_path
         )
 
-        output_file = os.path.join(
-            OUTPUT_FOLDER,
-            pdf_file.replace(
-                ".pdf",
-                ".txt"
+        if not pdf_path.exists():
+
+            raise FileNotFoundError(
+                f"PDF file not found: {pdf_path}"
             )
+
+        text_parts = []
+
+        with fitz.open(
+                pdf_path
+        ) as document:
+
+            for page in document:
+
+                text_parts.append(
+                    page.get_text()
+                )
+
+        return "\n".join(
+            text_parts
+        ).strip()
+
+    except Exception as error:
+
+        logger.error(
+            f"Resume text extraction failed: {error}"
         )
 
-        with open(
-            output_file,
-            "w",
-            encoding="utf-8"
-        ) as file:
+        raise
 
-            file.write(text)
 
-        print(
-            f"Processed: {pdf_file}"
+def safe_extract_text(
+        pdf_path):
+
+    try:
+        return extract_text(
+            pdf_path
         )
 
-    print("\nDone")
+    except Exception as error:
+
+        logger.error(
+            f"Safe extraction failed: {error}"
+        )
+
+        return ""
+
+
+def save_extracted_text(
+        pdf_path,
+        output_folder=OUTPUT_FOLDER):
+
+    ensure_output_folder()
+
+    text = extract_text(
+        pdf_path
+    )
+
+    output_path = Path(
+        output_folder
+    ) / f"{Path(pdf_path).stem}.txt"
+
+    output_path.write_text(
+        text,
+        encoding="utf-8"
+    )
+
+    return output_path
 
 
 if __name__ == "__main__":
 
-    process_pdfs(limit=50)
+    ensure_output_folder()
