@@ -1,33 +1,98 @@
-# RecruitVerse: AI-Powered Recruitment Intelligence System
+# RecruitVerse
 
-RecruitVerse is an AI-powered recruitment platform designed to automate and optimize the hiring process.
+AI Powered Recruitment Intelligence System
 
-## Main Features
+RecruitVerse is an AI-driven recruitment platform that automates resume screening, skill extraction, candidate matching, ranking, authentication, and API-based recruitment workflows.
 
-- Resume parsing
-- Job description parsing
-- Skill extraction
-- Candidate-job matching
-- Candidate ranking
-- Explainable scorecard
-- PostgreSQL database
-- Big Data analytics using Hadoop/Spark
-- Power BI dashboard
-- AI recruiter assistant
+---
 
-## Week 1 Progress
+## Overview
 
-### Day 1
-- GitHub repository created
-- Project folder structure created
-- Python environment planned
-- PostgreSQL setup planned
-- Dataset collection started
+RecruitVerse helps recruiters process resumes, extract candidate skills, compare resumes with job descriptions, calculate matching scores, rank candidates, and manage recruiter authentication through both Streamlit UI and FastAPI backend.
 
-### Day 2
-- Skills dictionary prepared
-- Synthetic resume dataset generated
-- Sample job descriptions planned
+The project includes:
 
-### Day 3
-- Dataset organization and manifest creation
+- Resume Parsing
+- Skill Extraction
+- Keyword Matching
+- Candidate Ranking
+- Authentication System
+- FastAPI Backend
+- Streamlit Dashboard
+- PostgreSQL Database
+- Docker Deployment
+- Unit and Integration Testing
+- Logging and Validation
+
+---
+
+## Features
+
+- Resume text extraction from PDF files
+- Skill extraction from resume text
+- Candidate-job matching score calculation
+- Candidate ranking based on score
+- Recruiter registration and login
+- Password hashing using bcrypt
+- Session management using Streamlit
+- Protected dashboard access
+- REST API using FastAPI
+- PostgreSQL database integration
+- Dockerized FastAPI and PostgreSQL setup
+- Automated testing using pytest
+- Logging and error handling
+
+---
+
+## Technology Stack
+
+- Python
+- FastAPI
+- Streamlit
+- PostgreSQL
+- Docker
+- PyMuPDF
+- bcrypt
+- pytest
+- pandas
+- plotly
+- sentence-transformers
+
+---
+
+## Project Architecture
+
+![Architecture](docs/architecture.png)
+
+---
+
+## Folder Structure
+
+```text
+RecruitVerse/
+├── data/
+├── docs/
+│   ├── screenshots/
+│   ├── api_documentation.md
+│   ├── project_report.md
+│   └── user_manual.md
+├── exports/
+├── logs/
+├── sql/
+│   └── init.sql
+├── src/
+│   ├── api/
+│   ├── auth/
+│   ├── matching/
+│   ├── parser/
+│   ├── ranking/
+│   ├── services/
+│   ├── ui/
+│   └── utils/
+├── tests/
+├── Dockerfile
+├── docker-compose.yml
+├── .dockerignore
+├── .env.example
+├── requirements.txt
+└── README.md

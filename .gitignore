@@ -43,3 +43,6 @@ Thumbs.db.venv/
 .venv/
 .coverage
 data/parsed_resumes/raw_text_backup.txt
+.pytest_cache/
+htmlcov/
+logs/*.log
