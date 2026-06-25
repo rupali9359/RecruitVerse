@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+from typing import List
+from typing import Optional
 
 from fastapi import APIRouter
 from fastapi import FastAPI
@@ -15,6 +17,10 @@ if str(ROOT_DIR) not in sys.path:
     )
 
 
+from src.api.database import (
+    get_connection
+)
+
 from src.auth.login import (
     login_user
 )
@@ -23,9 +29,27 @@ from src.auth.register import (
     register_user
 )
 
+from src.services.analytics_service import (
+    get_recruiter_analytics,
+    get_search_history,
+    get_top_skills
+)
+
+from src.services.recommendation_engine import (
+    generate_recommendation
+)
+
+from src.services.shortlisting import (
+    shortlist_candidate
+)
+
+from src.utils.email_service import (
+    send_email
+)
+
 
 app = FastAPI(
-    title="RecruitVerse Authentication API"
+    title="RecruitVerse API"
 )
 
 
@@ -43,11 +67,48 @@ class RegisterRequest(BaseModel):
     password: str
 
 
+class StatusRequest(BaseModel):
+    resume_name: str
+    final_score: Optional[float] = 0
+    status: str
+
+
+class NoteRequest(BaseModel):
+    resume_name: str
+    note: str
+
+
+class ShortlistRequest(BaseModel):
+    resume_name: str
+    final_score: float
+
+
+class RecommendationRequest(BaseModel):
+    final_score: float
+    missing_skills: List[str]
+
+
+class EmailRequest(BaseModel):
+    receiver: str
+    subject: str
+    message: str
+
+
+class SearchRequest(BaseModel):
+    search_term: str
+
+
+class InterviewRequest(BaseModel):
+    candidate_name: str
+    interview_date: str
+    status: Optional[str] = "Scheduled"
+
+
 @router.get("/")
 def home():
 
     return {
-        "message": "RecruitVerse Authentication API is running"
+        "message": "RecruitVerse API is running"
     }
 
 
@@ -56,6 +117,30 @@ def health():
 
     return {
         "status": "OK"
+    }
+
+
+@router.post("/register")
+def register(
+        request: RegisterRequest):
+
+    user_id = register_user(
+        request.username,
+        request.email,
+        request.password
+    )
+
+    if user_id:
+
+        return {
+            "success": True,
+            "message": "User Registered",
+            "user_id": user_id
+        }
+
+    return {
+        "success": False,
+        "message": "User registration failed"
     }
 
 
@@ -73,34 +158,501 @@ def login(
     }
 
 
-@router.post("/register")
-def register(
-        request: RegisterRequest):
+@router.post("/update_status")
+def update_status(
+        request: StatusRequest):
 
-    user_id = register_user(
-        request.username,
-        request.email,
-        request.password
-    )
+    conn = None
+    cursor = None
 
-    if user_id:
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO candidate_status (
+                resume_name,
+                final_score,
+                status
+            )
+            VALUES (%s, %s, %s)
+            ON CONFLICT (resume_name)
+            DO UPDATE SET
+                final_score = EXCLUDED.final_score,
+                status = EXCLUDED.status,
+                updated_at = CURRENT_TIMESTAMP;
+            """,
+            (
+                request.resume_name,
+                request.final_score,
+                request.status
+            )
+        )
+
+        conn.commit()
+
         return {
             "success": True,
-            "message": "User Registered",
-            "user_id": user_id
+            "message": "Status Updated"
         }
 
+    except Exception as error:
+        if conn:
+            conn.rollback()
+
+        return {
+            "success": False,
+            "message": str(
+                error
+            )
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+@router.get("/candidate_status")
+def candidate_status():
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                resume_name,
+                final_score,
+                status,
+                updated_at
+            FROM candidate_status
+            ORDER BY updated_at DESC;
+            """
+        )
+
+        rows = cursor.fetchall()
+
+        return {
+            "success": True,
+            "data": [
+                {
+                    "resume_name": row[0],
+                    "final_score": row[1],
+                    "status": row[2],
+                    "updated_at": str(
+                        row[3]
+                    )
+                }
+                for row in rows
+            ]
+        }
+
+    except Exception as error:
+        return {
+            "success": False,
+            "message": str(
+                error
+            )
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+@router.post("/add_note")
+def add_note(
+        request: NoteRequest):
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO recruiter_notes (
+                resume_name,
+                note
+            )
+            VALUES (%s, %s);
+            """,
+            (
+                request.resume_name,
+                request.note
+            )
+        )
+
+        conn.commit()
+
+        return {
+            "success": True,
+            "message": "Note Added"
+        }
+
+    except Exception as error:
+        if conn:
+            conn.rollback()
+
+        return {
+            "success": False,
+            "message": str(
+                error
+            )
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+@router.get("/notes/{resume_name}")
+def notes(
+        resume_name: str):
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                note,
+                created_at
+            FROM recruiter_notes
+            WHERE resume_name = %s
+            ORDER BY created_at DESC;
+            """,
+            (
+                resume_name,
+            )
+        )
+
+        rows = cursor.fetchall()
+
+        return {
+            "success": True,
+            "data": [
+                {
+                    "note": row[0],
+                    "created_at": str(
+                        row[1]
+                    )
+                }
+                for row in rows
+            ]
+        }
+
+    except Exception as error:
+        return {
+            "success": False,
+            "message": str(
+                error
+            )
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+@router.post("/shortlist")
+def shortlist(
+        request: ShortlistRequest):
+
+    status = shortlist_candidate(
+        request.final_score
+    )
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO candidate_status (
+                resume_name,
+                final_score,
+                status
+            )
+            VALUES (%s, %s, %s)
+            ON CONFLICT (resume_name)
+            DO UPDATE SET
+                final_score = EXCLUDED.final_score,
+                status = EXCLUDED.status,
+                updated_at = CURRENT_TIMESTAMP;
+            """,
+            (
+                request.resume_name,
+                request.final_score,
+                status
+            )
+        )
+
+        conn.commit()
+
+        return {
+            "success": True,
+            "resume_name": request.resume_name,
+            "final_score": request.final_score,
+            "status": status
+        }
+
+    except Exception as error:
+        if conn:
+            conn.rollback()
+
+        return {
+            "success": False,
+            "message": str(
+                error
+            )
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+@router.post("/recommendation")
+def recommendation(
+        request: RecommendationRequest):
+
     return {
-        "success": False,
-        "message": "User registration failed"
+        "success": True,
+        "recommendation": generate_recommendation(
+            request.final_score,
+            request.missing_skills
+        )
     }
 
-@router.get("/health")
-def health():
+
+@router.post("/send_email")
+def send_email_api(
+        request: EmailRequest):
+
+    return send_email(
+        request.receiver,
+        request.subject,
+        request.message
+    )
+
+
+@router.get("/analytics")
+def analytics():
 
     return {
-        "status": "OK"
+        "success": True,
+        "data": get_recruiter_analytics()
     }
+
+
+@router.get("/top_skills")
+def top_skills():
+
+    return {
+        "success": True,
+        "data": get_top_skills()
+    }
+
+
+@router.post("/add_search")
+def add_search(
+        request: SearchRequest):
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO search_history (
+                search_term
+            )
+            VALUES (%s);
+            """,
+            (
+                request.search_term,
+            )
+        )
+
+        conn.commit()
+
+        return {
+            "success": True,
+            "message": "Search history added"
+        }
+
+    except Exception as error:
+        if conn:
+            conn.rollback()
+
+        return {
+            "success": False,
+            "message": str(
+                error
+            )
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+@router.get("/search_history")
+def search_history():
+
+    return {
+        "success": True,
+        "data": get_search_history()
+    }
+
+
+@router.post("/schedule_interview")
+def schedule_interview(
+        request: InterviewRequest):
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO interviews (
+                candidate_name,
+                interview_date,
+                status
+            )
+            VALUES (%s, %s, %s);
+            """,
+            (
+                request.candidate_name,
+                request.interview_date,
+                request.status
+            )
+        )
+
+        conn.commit()
+
+        return {
+            "success": True,
+            "candidate": request.candidate_name,
+            "date": request.interview_date,
+            "status": request.status
+        }
+
+    except Exception as error:
+        if conn:
+            conn.rollback()
+
+        return {
+            "success": False,
+            "message": str(
+                error
+            )
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
+
+@router.get("/interviews")
+def interviews():
+
+    conn = None
+    cursor = None
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT
+                candidate_name,
+                interview_date,
+                status,
+                created_at
+            FROM interviews
+            ORDER BY interview_date DESC;
+            """
+        )
+
+        rows = cursor.fetchall()
+
+        return {
+            "success": True,
+            "data": [
+                {
+                    "candidate_name": row[0],
+                    "interview_date": str(
+                        row[1]
+                    ),
+                    "status": row[2],
+                    "created_at": str(
+                        row[3]
+                    )
+                }
+                for row in rows
+            ]
+        }
+
+    except Exception as error:
+        return {
+            "success": False,
+            "message": str(
+                error
+            )
+        }
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conn:
+            conn.close()
+
 
 app.include_router(
     router
