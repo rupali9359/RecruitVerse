@@ -45,3 +45,15 @@ CREATE TABLE IF NOT EXISTS interviews (
     status TEXT DEFAULT 'Scheduled',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS ai_insights (
+    id SERIAL PRIMARY KEY,
+    resume_name TEXT NOT NULL,
+    summary TEXT,
+    strengths TEXT,
+    weaknesses TEXT,
+    skill_gap_percentage FLOAT DEFAULT 0,
+    recommended_role TEXT,
+    final_score FLOAT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

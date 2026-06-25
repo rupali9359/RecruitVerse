@@ -2,7 +2,9 @@ import sys
 from pathlib import Path
 
 import streamlit as st
-
+from src.ui.ai_copilot import (
+    show_ai_copilot_page
+)
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
@@ -45,6 +47,7 @@ def show_dashboard():
             "Matching",
             "Rankings",
             "Analytics",
+            "AI Copilot",
             "Recruiter Notes",
             "Interviews"
         ]
@@ -200,7 +203,8 @@ def show_dashboard():
         st.info(
             "Matching module processes resumes against job descriptions."
         )
-
+    elif menu == "AI Copilot":
+        show_ai_copilot_page()
 
 if __name__ == "__main__":
 

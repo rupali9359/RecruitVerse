@@ -7,6 +7,14 @@ from fastapi import APIRouter
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from src.ai_insights.recruiter_copilot import (
+    generate_insights
+)
+
+from src.services.save_ai_insights import (
+    get_saved_ai_insights,
+    save_ai_insight
+)
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
@@ -103,6 +111,12 @@ class InterviewRequest(BaseModel):
     interview_date: str
     status: Optional[str] = "Scheduled"
 
+class AIInsightRequest(BaseModel):
+    resume_name: str
+    matched_skills: List[str]
+    missing_skills: List[str]
+    required_skills: Optional[List[str]] = None
+    final_score: Optional[float] = None
 
 @router.get("/")
 def home():
@@ -653,7 +667,41 @@ def interviews():
         if conn:
             conn.close()
 
+@router.post("/ai_insights")
+def ai_insights(
+        request: AIInsightRequest):
+
+    insights = generate_insights(
+        request.matched_skills,
+        request.missing_skills,
+        request.required_skills,
+        request.final_score
+    )
+
+    save_result = save_ai_insight(
+        request.resume_name,
+        insights
+    )
+
+    return {
+        "success": save_result[
+            "success"
+        ],
+        "insights": insights,
+        "save_result": save_result
+    }
+
+
+@router.get("/ai_insights")
+def saved_ai_insights():
+
+    return {
+        "success": True,
+        "data": get_saved_ai_insights()
+    }
+
 
 app.include_router(
     router
 )
+
