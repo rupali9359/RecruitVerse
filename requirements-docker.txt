@@ -5,3 +5,5 @@ python-dotenv
 bcrypt
 pydantic
 yagmail
+scikit-learn
+joblib
