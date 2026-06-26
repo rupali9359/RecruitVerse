@@ -1,33 +1,28 @@
-import os
-from pathlib import Path
-
 import psycopg2
-from dotenv import load_dotenv
 
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-
-load_dotenv(
-    ROOT_DIR / ".env"
+from src.config.settings import (
+    get_database_config
 )
 
 
 def get_connection():
 
+    config = get_database_config()
+
     return psycopg2.connect(
-        database=os.getenv(
-            "DB_NAME"
-        ),
-        user=os.getenv(
-            "DB_USER"
-        ),
-        password=os.getenv(
-            "DB_PASSWORD"
-        ),
-        host=os.getenv(
-            "DB_HOST"
-        ),
-        port=os.getenv(
-            "DB_PORT"
-        )
+        database=config[
+            "database"
+        ],
+        user=config[
+            "user"
+        ],
+        password=config[
+            "password"
+        ],
+        host=config[
+            "host"
+        ],
+        port=config[
+            "port"
+        ]
     )

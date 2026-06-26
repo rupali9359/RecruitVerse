@@ -44,12 +44,9 @@ except Exception:
         )
 
 
-try:
-    from src.ui.analytics import (
-        show_analytics_page as existing_analytics_page
-    )
-except Exception:
-    existing_analytics_page = None
+from src.ui.analytics import (
+    show_analytics_page
+)
 
 
 try:
@@ -309,37 +306,7 @@ def show_semantic_search_analytics():
 
 def show_analytics_menu_page():
 
-    if existing_analytics_page:
-
-        try:
-            existing_analytics_page()
-
-        except Exception as error:
-            st.title(
-                "Analytics"
-            )
-
-            st.warning(
-                "Main analytics page could not load."
-            )
-
-            st.write(
-                error
-            )
-
-    else:
-
-        st.title(
-            "Analytics"
-        )
-
-        st.info(
-            "Analytics module is not available yet."
-        )
-
-    st.divider()
-
-    show_semantic_search_analytics()
+    show_analytics_page()
 
 
 def show_recruiter_notes_page():

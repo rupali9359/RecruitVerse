@@ -1,9 +1,6 @@
 {
-    "model_name": "RandomForestRegressor",
-    "training_rows": 24,
-    "testing_rows": 6,
-    "r2_score": 0.9765,
-    "mean_absolute_error": 1.0889,
-    "root_mean_squared_error": 1.4823,
-    "model_path": "C:\\Chinki\\DREAMMM\\CDAC CCAT\\FINAL PROJECT\\RecruitVerse\\models\\candidate_scoring.pkl"
+    "r2_score": 0.9729,
+    "model_path": "C:\\Chinki\\DREAMMM\\CDAC CCAT\\FINAL PROJECT\\RecruitVerse\\models\\candidate_scoring.pkl",
+    "status": "trained",
+    "model_name": "RandomForestRegressor"
 }

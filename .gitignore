@@ -48,3 +48,4 @@ htmlcov/
 logs/*.log
 vector_db/*.pkl
 data/parsed_resumes/raw_text/*
+config/*.env

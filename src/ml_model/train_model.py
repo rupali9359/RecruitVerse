@@ -11,6 +11,9 @@ from src.ml_model.prepare_data import (
     split_features_and_target
 )
 
+from src.ml_model.model_utils import (
+    save_model_metrics
+)
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
@@ -75,6 +78,21 @@ def train_candidate_scoring_model():
     print(
         "Model saved at:",
         MODEL_PATH
+    )
+    
+    metrics = {
+        "r2_score": round(
+            float(score),
+            4
+        ),
+        "model_path": str(
+            MODEL_PATH
+        ),
+        "status": "trained"
+    }
+
+    save_model_metrics(
+        metrics
     )
 
     return model
