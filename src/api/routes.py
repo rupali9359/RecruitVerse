@@ -7,6 +7,14 @@ from fastapi import APIRouter
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from src.semantic_search.vector_search import (
+    semantic_resume_search
+)
+
+from src.semantic_search.search_history import (
+    save_semantic_search
+)
+
 from src.ai_insights.recruiter_copilot import (
     generate_insights
 )
@@ -700,6 +708,22 @@ def saved_ai_insights():
         "data": get_saved_ai_insights()
     }
 
+
+@router.get("/semantic_search")
+def semantic_search(
+        query: str,
+        top_k: int = 10):
+
+    results = semantic_resume_search(
+        query,
+        top_k=top_k
+    )
+
+    save_semantic_search(
+        query
+    )
+
+    return results
 
 app.include_router(
     router
